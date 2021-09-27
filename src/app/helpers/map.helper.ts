@@ -13,18 +13,21 @@ export function mapToMatrix(value: string): Matrix {
 export function getCharPosition(
   matrix: Matrix,
   searchedChar: string
-): CharPosition | null {
-  let start: CharPosition | null = null;
+): Cursor | null {
+  let cursor: Cursor | null = null;
 
   matrix.forEach((row, y) => {
     const x = row.findIndex((char) => char === searchedChar);
 
     if (x > -1) {
-      start = { x, y };
+      cursor = new Cursor();
+      cursor.position.x = x;
+      cursor.position.y = y;
+      cursor.char = searchedChar;
     }
   });
 
-  return start;
+  return cursor;
 }
 
 export function fetchNext(matrix: Matrix, cursor: Cursor): Cursor | false {

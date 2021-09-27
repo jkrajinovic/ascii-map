@@ -13,7 +13,6 @@ import {
 import { Direction } from '../types/directions';
 import { Matrix } from '../types/matrix';
 import { Cursor } from './cursor';
-import { CharPosition } from './position';
 
 export const START_CHAR = '@';
 export const END_CHAR = 'x';
@@ -21,7 +20,7 @@ export const CROSSROAD_CHAR = '+';
 
 export class AsciiMapCollection {
   matrix: Matrix = [];
-  startPosition: CharPosition | null = null;
+  startCursor: Cursor | null = null;
   direction: Direction = 'right';
 
   fromString(map: string) {
@@ -32,19 +31,17 @@ export class AsciiMapCollection {
     }
 
     this.matrix = mapToMatrix(map);
-    this.startPosition = getCharPosition(this.matrix, '@');
+    this.startCursor = getCharPosition(this.matrix, '@');
   }
 
   getPath(): string {
-    if (!this.startPosition) {
-      throw new Error('There is no start character');
+    if (!this.startCursor) {
+      throw new InvalidMapError('Start Cursor not found!!!');
     }
 
-    const startCursor = new Cursor();
-    startCursor.position = { ...this.startPosition };
-    startCursor.char = '@';
+    const startCursor = copyCursor(this.startCursor);
 
-    const pathMap = this.getNext(this.matrix, startCursor);
+    const pathMap = this.resolvePath(this.matrix, startCursor);
     return pathMap.map((cursor) => cursor.char).join('');
   }
 
@@ -53,7 +50,7 @@ export class AsciiMapCollection {
     return filtered.join('');
   }
 
-  private getNext(matrix: Matrix, cursor: Cursor) {
+  private resolvePath(matrix: Matrix, cursor: Cursor) {
     let path: Array<Cursor> = [cursor];
 
     let nextCursor: Cursor | false = fetchNext(matrix, cursor);
