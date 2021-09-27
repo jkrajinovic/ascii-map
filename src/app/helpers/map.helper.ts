@@ -5,7 +5,7 @@ import { CharPosition } from '../models/position';
 import { Direction } from '../types/directions';
 import { Matrix } from '../types/matrix';
 
-export function stringToMatrix(value: string): Matrix {
+export function mapToMatrix(value: string): Matrix {
   const rows = value.split('\n');
   return rows.map((row) => row.split(''));
 }
@@ -88,8 +88,10 @@ export function changeDirection(matrix: Matrix, cursor: Cursor): Cursor {
   throw new InvalidCrossRoad('Crossroad has no valid turn!!');
 }
 
-export function isCrossRoad(char: string) {
-  return char === CROSSROAD_CHAR || isValidChar(char);
+export function isCrossRoad(matrix: Matrix, cursor: Cursor) {
+  const crossRoadLetter =
+    isValidChar(cursor.char) && !fetchNext(matrix, cursor);
+  return cursor.char === CROSSROAD_CHAR || crossRoadLetter;
 }
 
 export function isValidChar(char: string) {
@@ -114,4 +116,51 @@ export function copyCursor(cursor: Cursor): Cursor {
   newCursor.direction = cursor.direction;
   newCursor.position = { ...cursor.position };
   return newCursor;
+}
+
+export function validateMap(map: string): { message: string } | null {
+  const startCharNumber = (map.match(new RegExp('@', 'g')) || []).length;
+  if (startCharNumber > 1) {
+    return {
+      message: 'Start Character apears more than once!',
+    };
+  }
+
+  if (startCharNumber === 0) {
+    return {
+      message: 'Start Character is missing!',
+    };
+  }
+
+  const endCharNumber = (map.match(new RegExp('x', 'g')) || []).length;
+
+  if (endCharNumber > 1) {
+    return {
+      message: 'End Character apears more than once!',
+    };
+  }
+
+  if (endCharNumber === 0) {
+    return {
+      message: 'End character is missing!',
+    };
+  }
+
+  const multipleStartingPath = (map.match(new RegExp('-@-', 'g')) || []).length;
+
+  if (multipleStartingPath > 0) {
+    return {
+      message: 'Start has multiple paths!',
+    };
+  }
+
+  return null;
+}
+
+export function cursorExists(path: Array<Cursor>, nextCursor: Cursor) {
+  return path.find(
+    (cursor) =>
+      cursor.position.x === nextCursor.position.x &&
+      cursor.position.y === nextCursor.position.y
+  );
 }

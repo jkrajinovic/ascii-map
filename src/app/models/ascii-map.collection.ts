@@ -1,14 +1,15 @@
-import { CursorError } from '@angular/compiler/src/ml_parser/lexer';
-import { InvalidCursorError } from '../errors/errors';
+import { InvalidCursorError, InvalidMapError } from '../errors/errors';
 import {
   changeDirection,
   copyCursor,
+  cursorExists,
   fetchNext,
   getCharPosition,
+  isCrossRoad,
   isValidChar,
-  isWithinMatrix,
-  stringToMatrix,
-} from '../helpers/string.helper';
+  mapToMatrix,
+  validateMap,
+} from '../helpers/map.helper';
 import { Direction } from '../types/directions';
 import { Matrix } from '../types/matrix';
 import { Cursor } from './cursor';
@@ -23,8 +24,14 @@ export class AsciiMapCollection {
   startPosition: CharPosition | null = null;
   direction: Direction = 'right';
 
-  fromString(value: string) {
-    this.matrix = stringToMatrix(value);
+  fromString(map: string) {
+    const error = validateMap(map);
+
+    if (error) {
+      throw new InvalidMapError(error.message);
+    }
+
+    this.matrix = mapToMatrix(map);
     this.startPosition = getCharPosition(this.matrix, '@');
   }
 
@@ -37,7 +44,8 @@ export class AsciiMapCollection {
     startCursor.position = { ...this.startPosition };
     startCursor.char = '@';
 
-    return this.getNext(this.matrix, startCursor);
+    const pathMap = this.getNext(this.matrix, startCursor);
+    return pathMap.map((cursor) => cursor.char).join('');
   }
 
   getLetters(path: string): string {
@@ -46,7 +54,7 @@ export class AsciiMapCollection {
   }
 
   private getNext(matrix: Matrix, cursor: Cursor) {
-    let path = cursor.char;
+    let path: Array<Cursor> = [cursor];
 
     let nextCursor: Cursor | false = fetchNext(matrix, cursor);
 
@@ -56,7 +64,7 @@ export class AsciiMapCollection {
     }
 
     do {
-      if (cursor.char === CROSSROAD_CHAR) {
+      if (isCrossRoad(matrix, cursor)) {
         nextCursor = changeDirection(matrix, cursor);
       } else {
         nextCursor = fetchNext(matrix, cursor);
@@ -68,7 +76,10 @@ export class AsciiMapCollection {
         );
       }
 
-      path += nextCursor.char;
+      if (!cursorExists(path, nextCursor)) {
+        path.push(copyCursor(nextCursor));
+      }
+
       cursor = copyCursor(nextCursor);
     } while (cursor.char !== END_CHAR);
 
