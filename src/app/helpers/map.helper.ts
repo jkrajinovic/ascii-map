@@ -1,4 +1,4 @@
-import { InvalidCrossRoad } from '../errors/errors';
+import { InvalidCrossRoad, InvalidMapError } from '../errors/errors';
 import { CROSSROAD_CHAR } from '../models/ascii-map.collection';
 import { Cursor } from '../models/cursor';
 import { CharPosition } from '../models/position';
@@ -75,12 +75,22 @@ export function changeDirection(matrix: Matrix, cursor: Cursor): Cursor {
   cursor.direction = firstDirection;
   const firstTurn = fetchNext(matrix, cursor);
 
+  cursor.direction = secondDirection;
+  const secondTurn = fetchNext(matrix, cursor);
+
+  if (
+    firstTurn &&
+    firstTurn.char === '|' &&
+    secondTurn &&
+    secondTurn.char === '|'
+  ) {
+    throw new InvalidMapError('T forks are not supported!');
+  }
+
   if (firstTurn) {
     return firstTurn;
   }
 
-  cursor.direction = secondDirection;
-  const secondTurn = fetchNext(matrix, cursor);
   if (secondTurn) {
     return secondTurn;
   }
@@ -133,12 +143,6 @@ export function validateMap(map: string): { message: string } | null {
   }
 
   const endCharNumber = (map.match(new RegExp('x', 'g')) || []).length;
-
-  if (endCharNumber > 1) {
-    return {
-      message: 'End Character apears more than once!',
-    };
-  }
 
   if (endCharNumber === 0) {
     return {
