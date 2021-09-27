@@ -1,8 +1,11 @@
 import { CursorError } from '@angular/compiler/src/ml_parser/lexer';
+import { InvalidCursorError } from '../errors/errors';
 import {
   changeDirection,
+  copyCursor,
   fetchNext,
   getCharPosition,
+  isValidChar,
   isWithinMatrix,
   stringToMatrix,
 } from '../helpers/string.helper';
@@ -30,60 +33,44 @@ export class AsciiMapCollection {
       throw new Error('There is no start character');
     }
 
-    console.log(
-      'this.martrix, this.startPosition: ',
-      this.matrix,
-      this.startPosition
-    );
+    const startCursor = new Cursor();
+    startCursor.position = { ...this.startPosition };
+    startCursor.char = '@';
 
-    return this.getNext(this.matrix, this.startPosition, '@', 'right');
+    return this.getNext(this.matrix, startCursor);
   }
 
   getLetters(path: string): string {
-    const filtered = path.split('').filter((char) => {
-      const charAscii = char.charCodeAt(0);
-      console.log('charAscii: ', charAscii);
-
-      return charAscii >= 65 && charAscii < 91;
-    });
-
+    const filtered = path.split('').filter((char) => isValidChar(char));
     return filtered.join('');
   }
 
-  private getNext(
-    matrix: Matrix,
-    position: CharPosition,
-    char: string,
-    direction: Direction
-  ) {
-    console.log('runing: ');
-    let path = '@';
+  private getNext(matrix: Matrix, cursor: Cursor) {
+    let path = cursor.char;
 
-    let cursor = new Cursor();
-    cursor.position = { ...position };
-    cursor.char = char;
-    cursor.direction = direction;
+    let nextCursor: Cursor | false = fetchNext(matrix, cursor);
 
-    let nextCursor: Cursor | false = new Cursor();
-    let counter = 0;
+    if (!nextCursor) {
+      nextCursor = changeDirection(matrix, cursor);
+      cursor.direction = nextCursor.direction;
+    }
 
     do {
-      nextCursor = new Cursor();
-
-      // nextCursor = fetchNext(matrix, cursor);
-
       if (cursor.char === CROSSROAD_CHAR) {
         nextCursor = changeDirection(matrix, cursor);
       } else {
         nextCursor = fetchNext(matrix, cursor);
       }
 
-      if (nextCursor) {
-        path += nextCursor.char;
+      if (!nextCursor) {
+        throw new InvalidCursorError(
+          `Cursor invalid position:  ${JSON.stringify(nextCursor)}`
+        );
       }
-      counter++;
-      cursor = Object.assign(new Cursor(), nextCursor);
-    } while (cursor.char !== END_CHAR && nextCursor && counter < 50);
+
+      path += nextCursor.char;
+      cursor = copyCursor(nextCursor);
+    } while (cursor.char !== END_CHAR);
 
     return path;
   }
