@@ -1,3 +1,4 @@
+import { DirectionEnum } from '../enums/direction.enum';
 import { InvalidCursorError, InvalidMapError } from '../errors/errors';
 import {
   changeDirection,
@@ -21,7 +22,7 @@ export const CROSSROAD_CHAR = '+';
 export class AsciiMapCollection {
   matrix: Matrix = [];
   startCursor: Cursor | null = null;
-  direction: Direction = 'right';
+  direction: Direction = DirectionEnum.right;
 
   fromString(map: string) {
     const error = validateMap(map);

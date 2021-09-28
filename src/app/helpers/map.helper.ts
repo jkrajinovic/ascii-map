@@ -1,7 +1,7 @@
+import { DirectionEnum } from '../enums/direction.enum';
 import { InvalidCrossRoad, InvalidMapError } from '../errors/errors';
 import { CROSSROAD_CHAR } from '../models/ascii-map.collection';
 import { Cursor } from '../models/cursor';
-import { CharPosition } from '../models/position';
 import { Direction } from '../types/directions';
 import { Matrix } from '../types/matrix';
 
@@ -32,19 +32,19 @@ export function getCharPosition(
 
 export function fetchNext(matrix: Matrix, cursor: Cursor): Cursor | false {
   const nextCursor = copyCursor(cursor);
-  if (cursor.direction === 'right') {
+  if (cursor.direction === DirectionEnum.right) {
     nextCursor.position.x = nextCursor.position.x + 1;
   }
 
-  if (cursor.direction === 'left') {
+  if (cursor.direction === DirectionEnum.left) {
     nextCursor.position.x = nextCursor.position.x - 1;
   }
 
-  if (cursor.direction === 'up') {
+  if (cursor.direction === DirectionEnum.up) {
     nextCursor.position.y = nextCursor.position.y - 1;
   }
 
-  if (cursor.direction === 'down') {
+  if (cursor.direction === DirectionEnum.down) {
     nextCursor.position.y = nextCursor.position.y + 1;
   }
 
@@ -62,17 +62,23 @@ export function fetchNext(matrix: Matrix, cursor: Cursor): Cursor | false {
 }
 
 export function changeDirection(matrix: Matrix, cursor: Cursor): Cursor {
-  let firstDirection: Direction = 'up';
-  let secondDirection: Direction = 'left';
+  let firstDirection: Direction = DirectionEnum.up;
+  let secondDirection: Direction = DirectionEnum.left;
 
-  if (cursor.direction === 'right' || cursor.direction === 'left') {
-    firstDirection = 'up';
-    secondDirection = 'down';
+  if (
+    cursor.direction === DirectionEnum.right ||
+    cursor.direction === DirectionEnum.left
+  ) {
+    firstDirection = DirectionEnum.up;
+    secondDirection = DirectionEnum.down;
   }
 
-  if (cursor.direction === 'down' || cursor.direction === 'up') {
-    firstDirection = 'left';
-    secondDirection = 'right';
+  if (
+    cursor.direction === DirectionEnum.down ||
+    cursor.direction === DirectionEnum.up
+  ) {
+    firstDirection = DirectionEnum.left;
+    secondDirection = DirectionEnum.right;
   }
 
   cursor.direction = firstDirection;
